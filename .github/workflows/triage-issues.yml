@@ -1,50 +1,18 @@
-# This file is synced from the `.github` repository, do not modify it directly.
-name: Triage issues
-
-on:
-  push:
-    paths:
-    - .github/workflows/triage-issues.yml
-  schedule:
-    # Once every day at midnight UTC
-    - cron: "0 0 * * *"
-  issue_comment:
-
+name: GitHub Actions Demo
+on: [push]
 jobs:
-  stale:
-    if: >
-      startsWith(github.repository, 'Homebrew/') && (
-        github.event_name != 'issue_comment' || (
-          contains(github.event.issue.labels.*.name, 'stale') ||
-          contains(github.event.pull_request.labels.*.name, 'stale')
-        )
-      )
+  Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
-      - name: Mark/Close Stale Issues and Pull Requests
-        uses: actions/stale@v3
-        with:
-          repo-token: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
-          days-before-stale: 21
-          days-before-close: 7
-          stale-issue-message: >
-            This issue has been automatically marked as stale because it has not had
-            recent activity. It will be closed if no further activity occurs.
-          stale-pr-message: >
-            This pull request has been automatically marked as stale because it has not had
-            recent activity. It will be closed if no further activity occurs.
-          exempt-issue-labels: 'gsoc-outreachy,help wanted,in progress'
-          exempt-pr-labels: 'gsoc-outreachy,help wanted,in progress'
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - run: echo "🍏 This job's status is ${{ job.status }}."
 
-  lock-threads:
-    if: startsWith(github.repository, 'Homebrew/') && github.event_name != 'issue_comment'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Lock Outdated Threads
-        uses: dessant/lock-threads@63786a6c74ee3cfc4584f36de4360305c55e5126
-        with:
-          github-token: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
-          issue-lock-inactive-days: 30
-          issue-lock-labels: outdated
-          pr-lock-inactive-days: 30
-          pr-lock-labels: outdated
