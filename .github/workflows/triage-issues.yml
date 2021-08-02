@@ -6,7 +6,7 @@ jobs:
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ Mandolin13 }} event."
       - run: echo "🐧 This job is now running on a ${{ mando805ox }} server hosted by armando805ox36186!"
-      - run: echo "🔎 The name of your branch is ${{ Monsters-brew }} and your repository is ${{ Monsters-brew.repository }}."
+      - run: echo "🔎 The name of your branch is ${{ M1-Cal }} and your repository is ${{ Brew.master.repository }}."
       - name: Check out repository code
         uses: actions/checkout@v2
       - run: echo "💡 The ${{ Monsters-brew.repository }} repository has been cloned to the runner."
