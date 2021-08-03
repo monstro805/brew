@@ -91,10 +91,11 @@ module Superenv
     # g - Enable "-stdlib=libc++" for clang.
     # h - Enable "-stdlib=libstdc++" for clang.
     # K - Don't strip -arch <arch>, -m32, or -m64
+    # d - Don't strip -march=<target>. Use only in formulae that
+    #     have runtime detection of CPU features.
     # w - Pass -no_weak_imports to the linker
     #
     # These flags will also be present:
-    # s - apply fix for sed's Unicode support
     # a - apply fix for apr-1-config path
   end
   alias generic_setup_build_environment setup_build_environment
@@ -315,6 +316,11 @@ module Superenv
   end
 
   sig { void }
+  def runtime_cpu_detection
+    append_to_cccfg "d"
+  end
+
+  sig { void }
   def cxx11
     append_to_cccfg "x"
     append_to_cccfg "g" if homebrew_cc == "clang"
@@ -331,11 +337,26 @@ module Superenv
     append_to_cccfg "O"
   end
 
-  %w[O1 O0].each do |opt|
-    define_method opt do
-      send(:[]=, "HOMEBREW_OPTIMIZATION_LEVEL", opt)
+  # rubocop: disable Naming/MethodName
+  # Fixes style error `Naming/MethodName: Use snake_case for method names.`
+  sig { params(block: T.nilable(T.proc.void)).void }
+  def O0(&block)
+    if block
+      with_env(HOMEBREW_OPTIMIZATION_LEVEL: "O0", &block)
+    else
+      self["HOMEBREW_OPTIMIZATION_LEVEL"] = "O0"
     end
   end
+
+  sig { params(block: T.nilable(T.proc.void)).void }
+  def O1(&block)
+    if block
+      with_env(HOMEBREW_OPTIMIZATION_LEVEL: "O1", &block)
+    else
+      self["HOMEBREW_OPTIMIZATION_LEVEL"] = "O1"
+    end
+  end
+  # rubocop: enable Naming/MethodName
 end
 
 require "extend/os/extend/ENV/super"

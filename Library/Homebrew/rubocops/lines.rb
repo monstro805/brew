@@ -205,7 +205,7 @@ module RuboCop
 
           find_method_with_args(body_node, :depends_on, "mpich") do
             problem "Formulae in homebrew/core should use 'depends_on \"open-mpi\"' " \
-            "instead of '#{@offensive_node.source}'." do |corrector|
+                    "instead of '#{@offensive_node.source}'." do |corrector|
               corrector.replace(@offensive_node.source_range, "depends_on \"open-mpi\"")
             end
           end
@@ -340,7 +340,7 @@ module RuboCop
 
             offending_node(str)
             problem "References to `#{content}` should "\
-            "match the specified python dependency (`#{fix}`)" do |corrector|
+                    "match the specified python dependency (`#{fix}`)" do |corrector|
               corrector.replace(str.source_range, "\"#{fix}\"")
             end
           end
@@ -538,6 +538,13 @@ module RuboCop
             next if @formula_name == "wine"
 
             problem "macOS has been 64-bit only since 10.6 so ENV.universal_binary is deprecated."
+          end
+
+          find_instance_method_call(body_node, "ENV", :runtime_cpu_detection) do
+            next if tap_style_exception? :runtime_cpu_detection_allowlist
+
+            problem "Formulae should be verified as having support for runtime hardware detection before " \
+                    "using ENV.runtime_cpu_detection."
           end
 
           find_every_method_call_by_name(body_node, :depends_on).each do |method|

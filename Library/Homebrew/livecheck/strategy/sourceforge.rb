@@ -62,13 +62,19 @@ module Homebrew
             url:   String,
             regex: T.nilable(Regexp),
             cask:  T.nilable(Cask::Cask),
-            block: T.nilable(T.proc.params(arg0: String).returns(T.any(T::Array[String], String))),
+            block: T.nilable(
+              T.proc.params(arg0: String, arg1: Regexp).returns(T.any(String, T::Array[String], NilClass)),
+            ),
           ).returns(T::Hash[Symbol, T.untyped])
         }
         def self.find_versions(url, regex, cask: nil, &block)
           match = url.match(URL_MATCH_REGEX)
 
-          page_url = "https://sourceforge.net/projects/#{match[:project_name]}/rss"
+          page_url = if url.match?(%r{/rss(?:/?$|\?)})
+            url
+          else
+            "https://sourceforge.net/projects/#{match[:project_name]}/rss"
+          end
 
           # It may be possible to improve the default regex but there's quite a
           # bit of variation between projects and it can be challenging to

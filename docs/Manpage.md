@@ -184,6 +184,18 @@ first search, making that search slower than subsequent ones.
 * `-d`, `--description`:
   Search just descriptions for *`text`*. If *`text`* is flanked by slashes, it is interpreted as a regular expression.
 
+### `developer` [*`subcommand`*]
+
+Control Homebrew's developer mode. When developer mode is enabled,
+`brew update` will update Homebrew to the latest commit on the `master`
+branch instead of the latest stable version along with some other behaviour changes.
+
+`brew developer` [`state`]
+<br>Display the current state of Homebrew's developer mode.
+
+`brew developer` (`on`|`off`)
+<br>Turn Homebrew's developer mode on or off respectively.
+
 ### `doctor`, `dr` [*`--list-checks`*] [*`--audit-debug`*] [*`diagnostic_check`* ...]
 
 Check your system for potential problems. Will exit with a non-zero status
@@ -202,6 +214,8 @@ an issue; just ignore this.
 Download a bottle (if available) or source packages for *`formula`*e
 and binaries for *`cask`*s. For files, also print SHA-256 checksums.
 
+* `--bottle-tag`:
+  Download a bottle for given tag.
 * `--HEAD`:
   Fetch HEAD version instead of stable version.
 * `-f`, `--force`:
@@ -309,7 +323,7 @@ the installed formulae or, every 30 days, for all formulae.
 * `--include-test`:
   Install testing dependencies required to run `brew test` *`formula`*.
 * `--HEAD`:
-  If *`formula`* defines it, install the HEAD version, aka. master, trunk, unstable.
+  If *`formula`* defines it, install the HEAD version, aka. main, trunk, unstable, master.
 * `--fetch-HEAD`:
   Fetch the upstream repository to detect if the HEAD installation of the formula is outdated. Otherwise, the repository's HEAD will only be checked for updates when a new stable or development version has been released.
 * `--keep-tmp`:
@@ -451,7 +465,11 @@ information is displayed in interactive shells, and suppressed otherwise.
 * `--fetch-HEAD`:
   Fetch the upstream repository to detect if the HEAD installation of the formula is outdated. Otherwise, the repository's HEAD will only be checked for updates when a new stable or development version has been released.
 * `--greedy`:
-  Print outdated casks with `auto_updates` or `version :latest`.
+  Print outdated casks with `auto_updates true` or `version :latest`.
+* `--greedy-latest`:
+  Print outdated casks including those with `version :latest`.
+* `--greedy-auto-updates`:
+  Print outdated casks including those with `auto_updates true`.
 
 ### `pin` *`installed_formula`* [...]
 
@@ -500,6 +518,8 @@ reinstalled formulae or, every 30 days, for all formulae.
   Retain the temporary files created during installation.
 * `--display-times`:
   Print install times for each formula at the end of the run.
+* `-g`, `--git`:
+  Create a Git repository, useful for creating patches to the software.
 * `--cask`:
   Treat all named arguments as casks.
 * `--[no-]binaries`:
@@ -529,18 +549,20 @@ The search for *`text`* is extended online to `homebrew/core` and `homebrew/cask
   Search for only open GitHub pull requests.
 * `--closed`:
   Search for only closed GitHub pull requests.
+* `--repology`:
+  Search for *`text`* in the given database.
 * `--macports`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--fink`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--opensuse`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--fedora`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--debian`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--ubuntu`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 
 ### `shellenv`
 
@@ -685,6 +707,10 @@ upgraded formulae or, every 30 days, for all formulae.
   Skip installing cask dependencies.
 * `--greedy`:
   Also include casks with `auto_updates true` or `version :latest`.
+* `--greedy-latest`:
+  Also include casks with `version :latest`.
+* `--greedy-auto-updates`:
+  Also include casks with `auto_updates true`.
 
 ### `uses` [*`options`*] *`formula`* [...]
 
@@ -1061,7 +1087,7 @@ Build bottles for these formulae with GitHub Actions.
   Dispatch bottle for Linux (using GitHub runners).
 * `--linux-self-hosted`:
   Dispatch bottle for Linux (using self-hosted runner).
-* `--wheezy`:
+* `--linux-wheezy`:
   Use Debian Wheezy container for building the bottle on Linux.
 
 ### `edit` [*`--formula`*] [*`--cask`*] [*`formula`*|*`cask`* ...]
@@ -1127,7 +1153,7 @@ provided, check all kegs. Raises an error if run on uninstalled formulae.
 * `--cached`:
   Print the cached linkage values stored in `HOMEBREW_CACHE`, set by a previous `brew linkage` run.
 
-### `livecheck` [*`options`*] [*`formula`*|*`cask`* ...]
+### `livecheck`, `lc` [*`options`*] [*`formula`*|*`cask`* ...]
 
 Check for newer versions of formulae and/or casks from upstream.
 
@@ -1170,6 +1196,8 @@ Find pull requests that can be automatically merged using `brew pr-publish`.
   Run `brew pr-publish` on matching pull requests.
 * `--autosquash`:
   Instruct `brew pr-publish` to automatically reformat and reword commits in the pull request to our preferred format.
+* `--no-autosquash`:
+  Instruct `brew pr-publish` to skip automatically reformatting and rewording commits in the pull request to the preferred format.
 * `--ignore-failures`:
   Include pull requests that have failing status checks.
 
@@ -1180,6 +1208,8 @@ Requires write access to the repository.
 
 * `--autosquash`:
   If supported on the target tap, automatically reformat and reword commits in the pull request to our preferred format.
+* `--no-autosquash`:
+  Skip automatically reformatting and rewording commits in the pull request to the preferred format, even if supported on the target tap.
 * `--branch`:
   Branch to publish to (default: `master`).
 * `--message`:
@@ -1705,6 +1735,10 @@ Only supports GitHub Actions as a CI provider. This is because Homebrew uses Git
   Don't check if the local system is set up correctly.
 * `--build-from-source`:
   Build from source rather than building bottles.
+* `--build-dependents-from-source`:
+  Build dependents from source rather than testing bottles.
+* `--junit`:
+  generate a JUnit XML test results file.
 * `--keep-old`:
   Run `brew bottle --keep-old` to build new bottles for a single platform.
 * `--skip-relocation`:
@@ -1729,8 +1763,14 @@ Only supports GitHub Actions as a CI provider. This is because Homebrew uses Git
   Set the Git author/committer email to the given email.
 * `--publish`:
   Publish the uploaded bottles.
+* `--skip-dependents`:
+  Don't test any dependents.
 * `--skip-recursive-dependents`:
   Only test the direct dependents.
+* `--skip-unbottled-arm`:
+  Only test bottled formulae on Apple Silicon.
+* `--skip-unbottled-linux`:
+  Only test bottled formulae on Linux.
 * `--only-cleanup-before`:
   Only run the pre-cleanup step. Needs `--cleanup`.
 * `--only-setup`:
@@ -1739,8 +1779,20 @@ Only supports GitHub Actions as a CI provider. This is because Homebrew uses Git
   Only run the tap syntax check step.
 * `--only-formulae`:
   Only run the formulae steps.
+* `--only-formulae-detect`:
+  Only run the formulae detection steps.
+* `--only-formulae-dependents`:
+  Only run the formulae dependents steps.
 * `--only-cleanup-after`:
   Only run the post-cleanup step. Needs `--cleanup`.
+* `--testing-formulae`:
+  Use these testing formulae rather than running the formulae detection steps.
+* `--added-formulae`:
+  Use these added formulae rather than running the formulae detection steps.
+* `--deleted-formulae`:
+  Use these deleted formulae rather than running the formulae detection steps.
+* `--skipped-or-failed-formulae`:
+  Use these skipped or failed formulae from formulae steps for a formulae dependents step.
 
 ### `unalias` *`alias`* [...]
 
@@ -1936,6 +1988,9 @@ example, run `export HOMEBREW_NO_INSECURE_REDIRECT=1` rather than just
 
 - `HOMEBREW_GITHUB_PACKAGES_TOKEN`
   <br>Use this GitHub personal access token when accessing the GitHub Packages Registry (where bottles may be stored).
+
+- `HOMEBREW_DOCKER_REGISTRY_TOKEN`
+  <br>Use this bearer token for authenticating with a Docker registry proxying GitHub Packages.
 
 - `HOMEBREW_GITHUB_PACKAGES_USER`
   <br>Use this username when accessing the GitHub Packages Registry (where bottles may be stored).

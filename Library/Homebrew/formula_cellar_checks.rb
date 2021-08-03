@@ -284,6 +284,81 @@ module FormulaCellarChecks
     "Service command does not exist" unless File.exist?(formula.service.command.first)
   end
 
+  def check_cpuid_instruction(formula)
+    return unless formula.prefix.directory?
+    # TODO: add methods to `utils/ast` to allow checking for method use
+    return unless formula.path.read.include? "ENV.runtime_cpu_detection"
+    # Checking for `cpuid` only makes sense on Intel:
+    # https://en.wikipedia.org/wiki/CPUID
+    return unless Hardware::CPU.intel?
+
+    # macOS `objdump` is a bit slow, so we prioritise llvm's `llvm-objdump` (~5.7x faster)
+    # or binutils' `objdump` (~1.8x faster) if they are installed.
+    objdump   = Formula["llvm"].opt_bin/"llvm-objdump" if Formula["llvm"].any_version_installed?
+    objdump ||= Formula["binutils"].opt_bin/"objdump" if Formula["binutils"].any_version_installed?
+    objdump ||= which("objdump")
+    objdump ||= which("objdump", ENV["HOMEBREW_PATH"])
+
+    unless objdump
+      return <<~EOS
+        No `objdump` found, so cannot check for a `cpuid` instruction. Install `objdump` with
+          brew install binutils
+      EOS
+    end
+
+    keg = Keg.new(formula.prefix)
+    return if keg.binary_executable_or_library_files.any? do |file|
+      cpuid_instruction?(file, objdump)
+    end
+
+    "No `cpuid` instruction detected. #{formula} should not use `ENV.runtime_cpu_detection`."
+  end
+
+  def check_binary_arches(formula)
+    return unless formula.prefix.directory?
+    # There is no `binary_executable_or_library_files` method for the generic OS
+    return if !OS.mac? && !OS.linux?
+
+    keg = Keg.new(formula.prefix)
+    mismatches = {}
+    keg.binary_executable_or_library_files.each do |file|
+      farch = file.arch
+      mismatches[file] = farch unless farch == Hardware::CPU.arch
+    end
+    return if mismatches.empty?
+
+    compatible_universal_binaries, mismatches = mismatches.partition do |file, arch|
+      arch == :universal && file.archs.include?(Hardware::CPU.arch)
+    end.map(&:to_h) # To prevent transformation into nested arrays
+
+    universal_binaries_expected = if formula.tap.present? && formula.tap.core_tap?
+      tap_audit_exception(:universal_binary_allowlist, formula.name)
+    else
+      true
+    end
+    return if mismatches.empty? && universal_binaries_expected
+
+    s = ""
+
+    if mismatches.present?
+      s += <<~EOS
+        Binaries built for a non-native architecture were installed into #{formula}'s prefix.
+        The offending files are:
+          #{mismatches.map { |m| "#{m.first}\t(#{m.last})" } * "\n  "}
+      EOS
+    end
+
+    if compatible_universal_binaries.present? && !universal_binaries_expected
+      s += <<~EOS
+        Unexpected universal binaries were found.
+        The offending files are:
+          #{compatible_universal_binaries.keys * "\n  "}
+      EOS
+    end
+
+    s
+  end
+
   def audit_installed
     @new_formula ||= false
 
@@ -303,6 +378,8 @@ module FormulaCellarChecks
     problem_if_output(check_shim_references(formula.prefix))
     problem_if_output(check_plist(formula.prefix, formula.plist))
     problem_if_output(check_python_symlinks(formula.name, formula.keg_only?))
+    problem_if_output(check_cpuid_instruction(formula))
+    problem_if_output(check_binary_arches(formula))
   end
   alias generic_audit_installed audit_installed
 
@@ -310,6 +387,31 @@ module FormulaCellarChecks
 
   def relative_glob(dir, pattern)
     File.directory?(dir) ? Dir.chdir(dir) { Dir[pattern] } : []
+  end
+
+  def cpuid_instruction?(file, objdump = "objdump")
+    @instruction_column_index ||= {}
+    @instruction_column_index[objdump] ||= begin
+      objdump_version = Utils.popen_read(objdump, "--version")
+
+      if (objdump_version.match?(/^Apple LLVM/) && MacOS.version <= :mojave) ||
+         objdump_version.exclude?("LLVM")
+        2 # Mojave `objdump` or GNU Binutils `objdump`
+      else
+        1 # `llvm-objdump` or Catalina+ `objdump`
+      end
+    end
+
+    has_cpuid_instruction = false
+    Utils.popen_read(objdump, "--disassemble", file) do |io|
+      until io.eof?
+        instruction = io.readline.split("\t")[@instruction_column_index[objdump]]&.strip
+        has_cpuid_instruction = instruction == "cpuid" if instruction.present?
+        break if has_cpuid_instruction
+      end
+    end
+
+    has_cpuid_instruction
   end
 end
 
