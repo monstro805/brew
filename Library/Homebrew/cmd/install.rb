@@ -74,7 +74,7 @@ module Homebrew
           description: "Install testing dependencies required to run `brew test` <formula>.",
         }],
         [:switch, "--HEAD", {
-          description: "If <formula> defines it, install the HEAD version, aka. master, trunk, unstable.",
+          description: "If <formula> defines it, install the HEAD version, aka. main, trunk, unstable, master.",
         }],
         [:switch, "--fetch-HEAD", {
           description: "Fetch the upstream repository to detect if the HEAD installation of the " \
@@ -155,7 +155,7 @@ module Homebrew
     end
 
     begin
-      formulae, casks = args.named.to_formulae_and_casks
+      formulae, casks = args.named.to_formulae_and_casks(prefer_loading_from_json: true)
                             .partition { |formula_or_cask| formula_or_cask.is_a?(Formula) }
     rescue FormulaOrCaskUnavailableError, Cask::CaskUnavailableError => e
       retry if Tap.install_default_cask_tap_if_necessary(force: args.cask?)
@@ -253,6 +253,7 @@ module Homebrew
       return
     end
 
+    opoo e
     ohai "Searching for similarly named formulae..."
     formulae_search_results = search_formulae(e.name)
     case formulae_search_results.length

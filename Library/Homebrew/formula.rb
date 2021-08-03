@@ -29,6 +29,7 @@ require "mktemp"
 require "find"
 require "utils/spdx"
 require "extend/on_os"
+require "bottle_api"
 
 # A formula provides instructions and metadata for Homebrew to install a piece
 # of software. Every Homebrew formula is a {Formula}.
@@ -368,6 +369,13 @@ class Formula
     @bottle ||= Bottle.new(self, bottle_specification) if bottled?
   end
 
+  # The Bottle object for given tag.
+  # @private
+  sig { params(tag: T.nilable(String)).returns(T.nilable(Bottle)) }
+  def bottle_for_tag(tag = nil)
+    Bottle.new(self, bottle_specification, tag) if bottled?
+  end
+
   # The description of the software.
   # @!method desc
   # @see .desc=
@@ -512,7 +520,13 @@ class Formula
   # exists and is not empty.
   # @private
   def latest_version_installed?
-    (dir = latest_installed_prefix).directory? && !dir.children.empty?
+    latest_prefix = if ENV["HOMEBREW_JSON_CORE"].present? && (latest_pkg_version = BottleAPI.latest_pkg_version(name))
+      prefix latest_pkg_version
+    else
+      latest_installed_prefix
+    end
+
+    (dir = latest_prefix).directory? && !dir.children.empty?
   end
 
   # If at least one version of {Formula} is installed.
@@ -972,13 +986,13 @@ class Formula
   # The generated launchd {.plist} file path.
   sig { returns(Pathname) }
   def plist_path
-    prefix/"#{plist_name}.plist"
+    opt_prefix/"#{plist_name}.plist"
   end
 
   # The generated systemd {.service} file path.
   sig { returns(Pathname) }
   def systemd_service_path
-    prefix/"#{service_name}.service"
+    opt_prefix/"#{service_name}.service"
   end
 
   # The service specification of the software.
@@ -1325,6 +1339,11 @@ class Formula
     Formula.cache[:outdated_kegs][cache_key] ||= begin
       all_kegs = []
       current_version = T.let(false, T::Boolean)
+      latest_version = if ENV["HOMEBREW_JSON_CORE"].present? && (core_formula? || tap.blank?)
+        BottleAPI.latest_pkg_version(name) || pkg_version
+      else
+        pkg_version
+      end
 
       installed_kegs.each do |keg|
         all_kegs << keg
@@ -1332,8 +1351,8 @@ class Formula
         next if version.head?
 
         tab = Tab.for_keg(keg)
-        next if version_scheme > tab.version_scheme && pkg_version != version
-        next if version_scheme == tab.version_scheme && pkg_version > version
+        next if version_scheme > tab.version_scheme && latest_version != version
+        next if version_scheme == tab.version_scheme && latest_version > version
 
         # don't consider this keg current if there's a newer formula available
         next if follow_installed_alias? && new_formula_available?
@@ -1460,9 +1479,9 @@ class Formula
   end
 
   # Standard parameters for cargo builds.
-  sig { returns(T::Array[T.any(String, Pathname)]) }
-  def std_cargo_args
-    ["--locked", "--root", prefix, "--path", "."]
+  sig { params(root: String, path: String).returns(T::Array[T.any(String, Pathname)]) }
+  def std_cargo_args(root: prefix, path: ".")
+    ["--locked", "--root", root, "--path", path]
   end
 
   # Standard parameters for CMake builds.
@@ -1549,6 +1568,18 @@ class Formula
   sig { returns(String) }
   def rpath
     "@loader_path/../lib"
+  end
+
+  # Creates a new `Time` object for use in the formula as the build time.
+  #
+  # @see https://www.rubydoc.info/stdlib/time/Time Time
+  sig { returns(Time) }
+  def time
+    if ENV["SOURCE_DATE_EPOCH"].present?
+      Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc
+    else
+      Time.now.utc
+    end
   end
 
   # an array of all core {Formula} names
@@ -2984,6 +3015,13 @@ class Formula
             EOS
             T.cast(self, PourBottleCheck).satisfy { MacOS::CLT.installed? }
           end
+        end
+      when :default_prefix
+        lambda do |_|
+          T.cast(self, PourBottleCheck).reason(+<<~EOS)
+            The bottle needs to be installed into #{Homebrew::DEFAULT_PREFIX}.
+          EOS
+          T.cast(self, PourBottleCheck).satisfy { HOMEBREW_PREFIX.to_s == Homebrew::DEFAULT_PREFIX }
         end
       else
         raise ArgumentError, "Invalid preset `pour_bottle?` condition" if only_if.present?

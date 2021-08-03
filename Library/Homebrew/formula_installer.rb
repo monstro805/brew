@@ -754,10 +754,10 @@ class FormulaInstaller
 
     ohai "Finishing up" if verbose?
 
-    install_service
-
     keg = Keg.new(formula.prefix)
     link(keg)
+
+    install_service
 
     fix_dynamic_linkage(keg) if !@poured_bottle || !formula.bottle_specification.skip_relocation?
 
@@ -1194,6 +1194,12 @@ class FormulaInstaller
       problem_if_output(check_env_path(formula.sbin))
     end
     super
+  end
+
+  # This is a stub for calls made to this method at install time.
+  # Exceptions are correctly identified when doing `brew audit`.
+  def tap_audit_exception(*)
+    true
   end
 
   def self.locked

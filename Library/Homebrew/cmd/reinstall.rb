@@ -12,6 +12,7 @@ require "cask/cmd"
 require "cask/utils"
 require "cask/macos"
 require "upgrade"
+require "bottle_api"
 
 module Homebrew
   extend T::Sig
@@ -57,6 +58,9 @@ module Homebrew
           env:         :display_install_times,
           description: "Print install times for each formula at the end of the run.",
         }],
+        [:switch, "-g", "--git", {
+          description: "Create a Git repository, useful for creating patches to the software.",
+        }],
       ].each do |options|
         send(*options)
         conflicts "--cask", options[-2]
@@ -80,6 +84,19 @@ module Homebrew
 
   def reinstall
     args = reinstall_args.parse
+
+    if ENV["HOMEBREW_JSON_CORE"].present?
+      args.named.each do |name|
+        formula = Formulary.factory(name)
+        next unless formula.any_version_installed?
+        next if formula.tap.present? && !formula.core_formula?
+        next unless BottleAPI.bottle_available?(name)
+
+        BottleAPI.fetch_bottles(name)
+      rescue FormulaUnavailableError
+        next
+      end
+    end
 
     formulae, casks = args.named.to_formulae_and_casks(method: :resolve)
                           .partition { |o| o.is_a?(Formula) }
@@ -108,6 +125,7 @@ module Homebrew
         debug:                      args.debug?,
         quiet:                      args.quiet?,
         verbose:                    args.verbose?,
+        git:                        args.git?,
       )
       Cleanup.install_formula_clean!(formula)
     end

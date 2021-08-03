@@ -40,7 +40,7 @@ due to upstream changes and we can’t provide [bottles](Bottles.md) for them.
 ### Niche (or self-submitted) stuff
 The software in question must:
 
-* be maintained (i.e. the last release wasn't ages ago, it works without patching on all supported macOS releases and has no outstanding, unpatched security vulnerabilities)
+* be maintained (i.e. the last release wasn't ages ago, it works without patching on all Homebrew-supported OS versions and has no outstanding, unpatched security vulnerabilities)
 * be known
 * be stable (e.g. not declared "unstable" or "beta" by upstream)
 * be used
@@ -73,7 +73,8 @@ Clang is the default C/C++ compiler on macOS (and has been for a long time). Sof
 We're a package manager so we want to do things like resolve dependencies and set up applications for our users. If things require too much manual intervention then they aren't useful in a package manager.
 
 ## Stuff that requires vendored versions of Homebrew formulae
-Homebrew formulae should avoid having multiple, separate, upstream projects bundled together in a single package to avoid shipping outdated/insecure versions of software that is already a formula.
+Homebrew formulae should avoid having multiple, separate, upstream projects bundled together in a single package to avoid shipping outdated/insecure versions of software that is already a formula. Veracode's [State of Software Security report](https://www.veracode.com/blog/research/announcing-state-software-security-v11-open-source-edition) concludes
+> In fact, 79% of the time, developers never update third-party libraries after including them in a codebase.
 
 For more info see [Debian's](https://www.debian.org/doc/debian-policy/ch-source.html#s-embeddedfiles) and [Fedora's](https://docs.fedoraproject.org/en-US/packaging-guidelines/#bundling) stances on this.
 

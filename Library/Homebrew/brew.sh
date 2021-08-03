@@ -81,6 +81,30 @@ ohai() {
   fi
 }
 
+opoo() {
+  if [[ -n "${HOMEBREW_COLOR}" || (-t 2 && -z "${HOMEBREW_NO_COLOR}") ]] # check whether stderr is a tty.
+  then
+    echo -ne "\\033[4;33mWarning\\033[0m: " >&2 # highlight Warning with underline and yellow color
+  else
+    echo -n "Warning: " >&2
+  fi
+  if [[ $# -eq 0 ]]
+  then
+    cat >&2
+  else
+    echo "$*" >&2
+  fi
+}
+
+bold() {
+  if [[ -n "${HOMEBREW_COLOR}" || (-t 2 && -z "${HOMEBREW_NO_COLOR}") ]] # check whether stderr is a tty.
+  then
+    echo -e "\\033[1m""$*""\\033[0m"
+  else
+    echo "$*"
+  fi
+}
+
 onoe() {
   if [[ -n "${HOMEBREW_COLOR}" || (-t 2 && -z "${HOMEBREW_NO_COLOR}") ]] # check whether stderr is a tty.
   then
@@ -183,11 +207,11 @@ update-preinstall() {
       HOMEBREW_AUTO_UPDATE_SECS="300"
     fi
 
-    # Skip auto-update if the core tap has been updated in the
+    # Skip auto-update if the repository has been updated in the
     # last $HOMEBREW_AUTO_UPDATE_SECS.
-    tap_fetch_head="${HOMEBREW_CORE_REPOSITORY}/.git/FETCH_HEAD"
-    if [[ -f "${tap_fetch_head}" &&
-          -n "$(find "${tap_fetch_head}" -type f -mtime -"${HOMEBREW_AUTO_UPDATE_SECS}"s 2>/dev/null)" ]]
+    repo_fetch_head="${HOMEBREW_REPOSITORY}/.git/FETCH_HEAD"
+    if [[ -f "${repo_fetch_head}" &&
+          -n "$(find "${repo_fetch_head}" -type f -mtime -"${HOMEBREW_AUTO_UPDATE_SECS}"s 2>/dev/null)" ]]
     then
       return
     fi
@@ -388,7 +412,7 @@ else
 
   # This is set by the user environment.
   # shellcheck disable=SC2154
-  if [[ -n "${HOMEBREW_FORCE_HOMEBREW_ON_LINUX}" && -n "${HOMEBREW_ON_DEBIAN7}" ]]
+  if [[ -n "${HOMEBREW_ON_DEBIAN7}" ]]
   then
     # Special version for our debian 7 docker container used to build patchelf and binutils
     HOMEBREW_MINIMUM_CURL_VERSION="7.25.0"
@@ -621,6 +645,15 @@ elif [[ -f "${HOMEBREW_LIBRARY}/Homebrew/dev-cmd/${HOMEBREW_COMMAND}.sh" ]]
 then
   if [[ -z "${HOMEBREW_DEVELOPER}" ]]
   then
+    if [[ -z "${HOMEBREW_DEV_CMD_RUN}" ]]
+    then
+      message="$(bold "${HOMEBREW_COMMAND}") is a developer command, so
+Homebrew's developer mode has been automatically turned on.
+To turn developer mode off, run $(bold "brew developer off")
+"
+      opoo "${message}"
+    fi
+
     git config --file="${HOMEBREW_GIT_CONFIG_FILE}" --replace-all homebrew.devcmdrun true 2>/dev/null
     export HOMEBREW_DEV_CMD_RUN="1"
   fi

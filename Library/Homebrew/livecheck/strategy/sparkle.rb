@@ -115,6 +115,16 @@ module Homebrew
 
             next if os && os != "osx"
 
+            if (minimum_system_version = item.elements["minimumSystemVersion"]&.text&.gsub(/\A\D+|\D+\z/, ""))
+              macos_minimum_system_version = begin
+                OS::Mac::Version.new(minimum_system_version).strip_patch
+              rescue MacOSVersionError
+                nil
+              end
+
+              next if macos_minimum_system_version&.prerelease?
+            end
+
             data = {
               title:          title,
               pub_date:       pub_date || Time.new(0),
@@ -134,7 +144,7 @@ module Homebrew
             url:   String,
             regex: T.nilable(Regexp),
             cask:  T.nilable(Cask::Cask),
-            block: T.nilable(T.proc.params(arg0: Item).returns(String)),
+            block: T.nilable(T.proc.params(arg0: Item).returns(T.nilable(String))),
           ).returns(T::Hash[Symbol, T.untyped])
         }
         def self.find_versions(url, regex, cask: nil, &block)
@@ -146,19 +156,20 @@ module Homebrew
           content = match_data.delete(:content)
 
           if (item = item_from_content(content))
-            match = if block
-              value = block.call(item)
-
-              unless T.unsafe(value).is_a?(String)
+            version = if block
+              case (value = block.call(item))
+              when String
+                value
+              when nil
+                return match_data
+              else
                 raise TypeError, "Return value of `strategy :sparkle` block must be a string."
               end
-
-              value
             else
               item.bundle_version&.nice_version
             end
 
-            match_data[:matches][match] = Version.new(match) if match
+            match_data[:matches][version] = Version.new(version) if version
           end
 
           match_data

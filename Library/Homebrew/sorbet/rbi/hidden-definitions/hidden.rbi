@@ -2740,8 +2740,6 @@ class Addressable::Template
 
   def extract(uri, processor=T.unsafe(nil)); end
 
-  def generate(params=T.unsafe(nil), recall=T.unsafe(nil), options=T.unsafe(nil)); end
-
   def initialize(pattern); end
 
   def keys(); end
@@ -3029,6 +3027,8 @@ module Bootsnap::LoadPathCache::ChangeObserver::ArrayMixin
 
   def []=(*args, &block); end
 
+  def append(*entries); end
+
   def clear(*args, &block); end
 
   def collect!(*args, &block); end
@@ -3054,6 +3054,8 @@ module Bootsnap::LoadPathCache::ChangeObserver::ArrayMixin
   def map!(*args, &block); end
 
   def pop(*args, &block); end
+
+  def prepend(*entries); end
 
   def push(*entries); end
 
@@ -3217,6 +3219,11 @@ module Bootsnap
   def self.logger=(logger); end
 
   def self.setup(cache_dir:, development_mode: T.unsafe(nil), load_path_cache: T.unsafe(nil), autoload_paths_cache: T.unsafe(nil), disable_trace: T.unsafe(nil), compile_cache_iseq: T.unsafe(nil), compile_cache_yaml: T.unsafe(nil)); end
+end
+
+module BottleAPI
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 class BottleSpecification
@@ -8356,6 +8363,8 @@ module Homebrew::EnvConfig
 
   def self.display_install_times?(); end
 
+  def self.docker_registry_token(); end
+
   def self.editor(); end
 
   def self.fail_log_lines(); end
@@ -11437,83 +11446,6 @@ class Migrator
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class MiniPortile
-  def activate(); end
-
-  def apply_patch(patch_file); end
-
-  def compile(); end
-
-  def configure(); end
-
-  def configure_options(); end
-
-  def configure_options=(configure_options); end
-
-  def configured?(); end
-
-  def cook(); end
-
-  def download(); end
-
-  def downloaded?(); end
-
-  def extract(); end
-
-  def files(); end
-
-  def files=(files); end
-
-  def host(); end
-
-  def host=(host); end
-
-  def initialize(name, version); end
-
-  def install(); end
-
-  def installed?(); end
-
-  def logger(); end
-
-  def logger=(logger); end
-
-  def name(); end
-
-  def original_host(); end
-
-  def patch(); end
-
-  def patch_files(); end
-
-  def patch_files=(patch_files); end
-
-  def path(); end
-
-  def target(); end
-
-  def target=(target); end
-
-  def version(); end
-  KEYRING_NAME = ::T.let(nil, ::T.untyped)
-  TAR_EXECUTABLES = ::T.let(nil, ::T.untyped)
-  VERSION = ::T.let(nil, ::T.untyped)
-end
-
-class MiniPortile
-  def self.mingw?(); end
-
-  def self.mswin?(); end
-
-  def self.windows?(); end
-end
-
-class MiniPortileCMake
-end
-
-class MiniPortileCMake
-end
-
 MiniTest = Minitest
 
 module Minitest
@@ -12655,13 +12587,9 @@ Net::HTTPServerErrorCode = Net::HTTPServerError
 
 Net::HTTPSession = Net::HTTP
 
-class Net::HTTPSuccess
-end
+Net::HTTPSuccess::EXCEPTION_TYPE = Net::HTTPError
 
-Net::HTTPSuccessCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPSuccess
-end
+Net::HTTPSuccessCode = Net::HTTPSuccess
 
 class Net::HTTPURITooLong
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -13048,58 +12976,6 @@ module OpenSSL
   def self.fips_mode(); end
 end
 
-class OpenURI::Buffer
-  def <<(str); end
-
-  def io(); end
-
-  def size(); end
-  StringMax = ::T.let(nil, ::T.untyped)
-end
-
-class OpenURI::Buffer
-end
-
-class OpenURI::HTTPError
-  def initialize(message, io); end
-end
-
-class OpenURI::HTTPRedirect
-  def initialize(message, io, uri); end
-end
-
-module OpenURI::Meta
-  def content_type_parse(); end
-
-  def meta_add_field(name, value); end
-
-  def meta_add_field2(name, values); end
-
-  def meta_setup_encoding(); end
-  RE_LWS = ::T.let(nil, ::T.untyped)
-  RE_PARAMETERS = ::T.let(nil, ::T.untyped)
-  RE_QUOTED_STRING = ::T.let(nil, ::T.untyped)
-  RE_TOKEN = ::T.let(nil, ::T.untyped)
-end
-
-module OpenURI::Meta
-  def self.init(obj, src=T.unsafe(nil)); end
-end
-
-module OpenURI
-  def self.check_options(options); end
-
-  def self.open_http(buf, target, proxy, options); end
-
-  def self.open_loop(uri, options); end
-
-  def self.open_uri(name, *rest); end
-
-  def self.redirectable?(uri1, uri2); end
-
-  def self.scan_open_optional_arguments(*rest); end
-end
-
 class Option
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -13295,10 +13171,6 @@ class Parlour::TypedObject
   extend ::T::InterfaceWrapper::Helpers
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module Parlour::Types
-  TypeLike = ::T.let(nil, ::T.untyped)
 end
 
 class Parlour::Types::Proc::Parameter
@@ -27029,11 +26901,8 @@ class RuboCop::AST::NodePattern::Parser
 end
 
 module RuboCop::AST::NodePattern::Sets
-  SET_BEGINNING_OF_DAY_BEGINNING_OF_WEEK_BEGINNING_OF_MONTH_ETC = ::T.let(nil, ::T.untyped)
   SET_BUILD_RECOMMENDED_TEST_OPTIONAL = ::T.let(nil, ::T.untyped)
   SET_DEPENDS_ON_USES_FROM_MACOS = ::T.let(nil, ::T.untyped)
-  SET_END_OF_DAY_END_OF_WEEK_END_OF_MONTH_ETC = ::T.let(nil, ::T.untyped)
-  SET_EQL_EQ_BE = ::T.let(nil, ::T.untyped)
   SET_INCLUDE_WITH_WITHOUT = ::T.let(nil, ::T.untyped)
   SET_SYSTEM_SHELL_OUTPUT_PIPE_OUTPUT = ::T.let(nil, ::T.untyped)
   SET_WITH_WITHOUT = ::T.let(nil, ::T.untyped)
@@ -29870,19 +29739,11 @@ module Tty
 end
 
 class URI::FTP
-  def buffer_open(buf, proxy, options); end
-end
-
-class URI::FTP
   def self.new2(user, password, host, port, path, typecode=T.unsafe(nil), arg_check=T.unsafe(nil)); end
 end
 
 class URI::File
   DEFAULT_PORT = ::T.let(nil, ::T.untyped)
-end
-
-class URI::HTTP
-  def buffer_open(buf, proxy, options); end
 end
 
 class URI::LDAP

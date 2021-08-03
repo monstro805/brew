@@ -110,7 +110,16 @@ module RuboCop
         end
 
         def check_on_os_block_content(component_precedence_list, on_os_block)
-          on_os_allowed_methods = %w[depends_on patch resource deprecate! disable! conflicts_with keg_only]
+          on_os_allowed_methods = %w[
+            depends_on
+            patch
+            resource
+            deprecate!
+            disable!
+            conflicts_with
+            keg_only
+            ignore_missing_libraries
+          ]
           _, offensive_node = check_order(component_precedence_list, on_os_block.body)
           component_problem(*offensive_node) if offensive_node
           child_nodes = on_os_block.body.begin_type? ? on_os_block.body.child_nodes : [on_os_block.body]
@@ -196,8 +205,8 @@ module RuboCop
           return if tap_style_exception? :components_order_exceptions
 
           problem "`#{format_component(c1)}` (line #{line_number(c1)}) " \
-            "should be put before `#{format_component(c2)}` " \
-            "(line #{line_number(c2)})" do |corrector|
+                  "should be put before `#{format_component(c2)}` " \
+                  "(line #{line_number(c2)})" do |corrector|
             reorder_components(corrector, c1, c2)
           end
         end
